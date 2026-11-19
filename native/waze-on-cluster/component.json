@@ -3,7 +3,7 @@
   "kind": "tool",
   "version": "0.10.901",
   "license": "GPL-3.0-or-later",
-  "title": "Maps on cluster (extended map test)",
+  "title": "Maps on cluster tool (extended map test)",
   "description": "Waze on cluster 0.10.9 (robertnisipeanu/idrive-apps) with the map over or under a layout's window (akakingj/idrive-apps extend-map), for AK Map Test. Remove Robert's Maps on cluster app and tool first.",
   "requires": {
     "mgu-deploy": "0.7.17",

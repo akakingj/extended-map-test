@@ -44,7 +44,7 @@ jobs:
           src_sha=$(git -C ../src rev-parse --short HEAD)
           sum=$(sha256sum native/waze-on-cluster/build/target/waze-on-cluster | cut -d' ' -f1)
           ver=$(jq -r .version native/waze-on-cluster.source.json)
-          git add -A native/waze-on-cluster
+          git add -A native/waze-on-cluster robert
           if git diff --cached --quiet; then echo "no change"; exit 0; fi
           git -c user.name="github-actions[bot]" -c user.email="41898541+github-actions[bot]@users.noreply.github.com" \
             commit -m "waze-on-cluster ${ver}: built from ${{ steps.src.outputs.repo }}@${src_sha}" -m "sha256 ${sum}"
