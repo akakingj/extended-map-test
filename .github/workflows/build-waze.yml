@@ -1,0 +1,51 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# waze-on-cluster for the Store: built from akakingj/idrive-apps (native/waze-on-cluster.source.json: repo
+# and ref) with the head unit's toolchain, tested there, and committed here as a repo-tree tool
+# (native/waze-on-cluster: the binary and every file it installs, no build step).
+name: build waze-on-cluster
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: [native/waze-on-cluster.source.json, tools/sync_waze.py, .github/workflows/build-waze.yml]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-waze
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: self
+      - id: src
+        run: |
+          echo "repo=$(jq -r .repo self/native/waze-on-cluster.source.json)" >> "$GITHUB_OUTPUT"
+          echo "ref=$(jq -r .ref self/native/waze-on-cluster.source.json)" >> "$GITHUB_OUTPUT"
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ steps.src.outputs.repo }}
+          ref: ${{ steps.src.outputs.ref }}
+          path: src
+          persist-credentials: false
+      # (the toolchain image: built by the Makefile when it is missing - native/cluster-render/docker)
+      - run: make -C src/native/waze-on-cluster test-x86
+      - run: make -C src/native/waze-on-cluster target
+      - run: python3 self/tools/sync_waze.py src self/native/waze-on-cluster
+      - name: commit
+        working-directory: self
+        run: |
+          src_sha=$(git -C ../src rev-parse --short HEAD)
+          sum=$(sha256sum native/waze-on-cluster/build/target/waze-on-cluster | cut -d' ' -f1)
+          ver=$(jq -r .version native/waze-on-cluster.source.json)
+          git add -A native/waze-on-cluster
+          if git diff --cached --quiet; then echo "no change"; exit 0; fi
+          git -c user.name="github-actions[bot]" -c user.email="41898541+github-actions[bot]@users.noreply.github.com" \
+            commit -m "waze-on-cluster ${ver}: built from ${{ steps.src.outputs.repo }}@${src_sha}" -m "sha256 ${sum}"
+          git push
