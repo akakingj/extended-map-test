@@ -1,12 +1,13 @@
 # extended-map-test
 
-A trial source for the MGU Store (iDrive 7): the CarPlay map laid under a layout on the whole instrument
+A trial source for the MGU Store (iDrive 7), private for now (the Store reads only public repositories: make it
+public, or install by hand, to try it on the car): the CarPlay map laid under a layout on the whole instrument
 cluster, tried without a laptop. Three components:
 
 | id | kind | what |
 |---|---|---|
-| `akakingj_map_test` | app | **AK Map Test** (AK 지도 시험): one layout, KO 1 Map - KO 1's dials over the map laid under them. A copy of AK Cluster Layouts (akakingj/idrive7-cluster-info, branch personal-kr-extend, where it is developed and tested: `node tools/test_map_test.js`). Built on the head unit. |
-| `waze-on-cluster` | tool | **Maps on cluster tool (extended map test)**, 0.10.901: Robert's Waze on cluster 0.10.9 with the map over or under a layout's window (`layout_window_file`, "under"), from akakingj/idrive-apps branch extend-map. Prebuilt and committed by the `build waze-on-cluster` workflow (native/waze-on-cluster.source.json). |
+| `akakingj_map_test` | app | **AK Map Test** (AK 지도 시험): one layout, KO 1 Map - KO 1's dials over the map laid under them. A copy of AK Cluster Layouts (akakingj/myapp-cluster, branch extend, where it is developed and tested: `node tools/test_map_test.js`). Built on the head unit. |
+| `waze-on-cluster` | tool | **Maps on cluster tool (extended map test)**, 0.10.901: Robert's Waze on cluster 0.10.9 with the map over or under a layout's window (`layout_window_file`, "under"), from akakingj/myapp-map branch test. Prebuilt and committed by the `build waze-on-cluster` workflow (native/waze-on-cluster.source.json). |
 | `robertn_waze_cluster` | app | **Maps on cluster (extended map test)**, 0.6.12: Robert's Maps on cluster app as it is (robert/, a source package built on the head unit), so the tool and the app that controls it come from this one source. |
 
 The renderer (`cluster-render`) and the Store's own tools stay Robert's: every cluster app needs them.
@@ -33,6 +34,6 @@ his listings blocked: an installed component is updated only from the source tha
 
 ## Licences
 
-AK Map Test and kit/: as akakingj/idrive7-cluster-info (LICENSE, LICENSE-MIT, NOTICE.md).
+AK Map Test and kit/: as akakingj/myapp-cluster (LICENSE, LICENSE-MIT, NOTICE.md).
 native/waze-on-cluster and robert/robertn_waze_cluster: GPL-3.0-or-later (their LICENSE), Copyright (C) 2026 Robert Nisipeanu, the layout window
-from eroobeeroo/idrive-apps 3b7ce93 (Copyright (C) 2026 eroobeeroo); source: akakingj/idrive-apps extend-map.
+from eroobeeroo/idrive-apps 3b7ce93 (Copyright (C) 2026 eroobeeroo); source: akakingj/myapp-map test.

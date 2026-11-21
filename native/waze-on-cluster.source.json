@@ -1,6 +1,6 @@
 {
-  "repo": "akakingj/idrive-apps",
-  "ref": "extend-map",
+  "repo": "akakingj/myapp-map",
+  "ref": "test",
   "version": "0.10.901",
   "title": "Maps on cluster tool (extended map test)"
 }

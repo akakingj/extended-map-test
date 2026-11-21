@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: GPL-3.0-or-later
-"""sync_waze.py SRC DEST - (and robert/robertn_waze_cluster, the Maps on cluster app, as it is there) native/waze-on-cluster from a checkout of akakingj/idrive-apps (SRC, its
+"""sync_waze.py SRC DEST - (and robert/robertn_waze_cluster, the Maps on cluster app, as it is there) native/waze-on-cluster from a checkout of akakingj/myapp-map (SRC, its
 native/waze-on-cluster built: build/target/waze-on-cluster) into this repo's DEST, as a tool the Store
 installs from a repo tree: every file its component.json installs, committed, and component.json with
 no build step, the version and title of native/waze-on-cluster.source.json."""

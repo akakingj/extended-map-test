@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
-# waze-on-cluster for the Store: built from akakingj/idrive-apps (native/waze-on-cluster.source.json: repo
+# waze-on-cluster for the Store: built from akakingj/myapp-map test (native/waze-on-cluster.source.json: repo
 # and ref) with the head unit's toolchain, tested there, and committed here as a repo-tree tool
 # (native/waze-on-cluster: the binary and every file it installs, no build step).
 name: build waze-on-cluster
@@ -21,24 +21,41 @@ jobs:
   build:
     runs-on: ubuntu-24.04
     steps:
+      # without the token the private source can't be read: a notice, nothing built or changed
+      - id: tok
+        env:
+          T: ${{ secrets.MAP_SOURCE_TOKEN }}
+        run: |
+          if [ -n "$T" ]; then echo "ok=true" >> "$GITHUB_OUTPUT"
+          else echo "::notice::MAP_SOURCE_TOKEN is not set: akakingj/myapp-map is private, nothing built"; fi
       - uses: actions/checkout@v4
+        if: steps.tok.outputs.ok == 'true'
         with:
           path: self
       - id: src
+        if: steps.tok.outputs.ok == 'true'
         run: |
           echo "repo=$(jq -r .repo self/native/waze-on-cluster.source.json)" >> "$GITHUB_OUTPUT"
           echo "ref=$(jq -r .ref self/native/waze-on-cluster.source.json)" >> "$GITHUB_OUTPUT"
       - uses: actions/checkout@v4
+        if: steps.tok.outputs.ok == 'true'
         with:
           repository: ${{ steps.src.outputs.repo }}
           ref: ${{ steps.src.outputs.ref }}
           path: src
           persist-credentials: false
+          # akakingj/myapp-map is private: a token that can read it (Settings > Secrets > Actions:
+          # MAP_SOURCE_TOKEN, a fine-grained token with Contents: read on akakingj/myapp-map)
+          token: ${{ secrets.MAP_SOURCE_TOKEN }}
       # (the toolchain image: built by the Makefile when it is missing - native/cluster-render/docker)
       - run: make -C src/native/waze-on-cluster test-x86
+        if: steps.tok.outputs.ok == 'true'
       - run: make -C src/native/waze-on-cluster target
+        if: steps.tok.outputs.ok == 'true'
       - run: python3 self/tools/sync_waze.py src self/native/waze-on-cluster
+        if: steps.tok.outputs.ok == 'true'
       - name: commit
+        if: steps.tok.outputs.ok == 'true'
         working-directory: self
         run: |
           src_sha=$(git -C ../src rev-parse --short HEAD)
