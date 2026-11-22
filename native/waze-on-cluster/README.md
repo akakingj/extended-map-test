@@ -20,13 +20,14 @@ driven from the HMI by the companion app
 Both send the cluster map only as H.264 video, with no map data, so this is
 a video pipeline:
 
-1. **Ungate the second display.** A reversible patch to
-   `/usr/bin/carplay` makes `KI_KOMBI_VARIANT` 7 resolve to a supported
+1. **Ungate the second display.** A patch of carplay, applied in its
+   memory at start while `/usr/bin/carplay` stays as it ships, makes `KI_KOMBI_VARIANT` 7 resolve to a supported
    cluster variant, makes CarPlay start the cluster stream itself, and
    advertises the size the map is shown at ([patch/PATCH.md](patch/PATCH.md)).
-   Another to `/usr/bin/aapd` and `/etc/aapd.conf` does the same for Android
-   Auto (PATCH.md "Android Auto"). Each is applied only where it is
-   supported, and each on its own.
+   Another, applied in aapd's memory while `/usr/bin/aapd` and
+   `/etc/aapd.conf` stay as they ship, does the same for Android Auto
+   (PATCH.md "Android Auto"). Each is applied only where it is supported,
+   and each on its own.
 2. **Capture.** The phone sends the stream as RTP to the stock media-bus sink,
    AVB stream `media_transport.avb_streaming.15`; the render joins it as an
    extra receiver. It also listens on a local UDP port and a FIFO, which
@@ -44,17 +45,23 @@ The Store installs it with the app `robertn_waze_cluster`; it requires
 `cluster-render` and `mgu-deploy` (`component.json`, `"requires"`).
 
 **Install.** The deploy tool runs `patchd.js activate` as root. On a car
-coded `KI_KOMBI_VARIANT` 7 with a proven carplay build (or one CarPlay's
-Patch button patched before), it writes the patch and never stops, kills or
+coded `KI_KOMBI_VARIANT` 7 with a proven carplay build, it plans the patch
+in memory and arms CarPlay's next start, and never stops, kills or
 restarts CarPlay: the Store shows a restart pending, the app `Status:
-Patched after restart`, and one head-unit start runs the patched CarPlay.
-It then writes the Android Auto patch the same way on a proven aapd build.
-Anywhere else it leaves the binary as it is, and the app's Status says why
-(PATCH.md "Install-time activation").
+Patched after restart`, and one head-unit start runs CarPlay with the
+patch. Over an earlier release's patch of `/usr/bin/carplay` it puts the
+shipped file back in the same step; the earlier patch keeps running until
+CarPlay next starts, which then applies the patch in memory, so no restart
+is needed for it. It then does the same for Android Auto on a proven aapd
+build: an earlier release's patch of `/usr/bin/aapd` and `/etc/aapd.conf`
+goes back as they ship, and the patch is armed in aapd's memory. Anywhere
+else it leaves everything as it is, and the app's Status says why (PATCH.md
+"Install-time activation", "In memory").
 
 **Remove.** In the Store, remove the app, then the tool (refused while the
-app is installed). `patchd.js deactivate` reverts our edits to carplay,
-aapd and aapd.conf and drops our backups; the deploy tool then removes this
+app is installed). `patchd.js deactivate` turns both patches in memory
+off, reverts our edits to carplay, aapd and aapd.conf where an earlier
+release wrote them and drops our backups; the deploy tool then removes this
 tool's services and files. The next head-unit start runs the original
 CarPlay and aapd.
 
@@ -70,16 +77,21 @@ restarts it at once only where that cannot restart the head unit (PATCH.md
 on SIGTERM, which restarts the head unit.
 
 **Boot recovery.** If a patch keeps the head unit restarting, the boot step
-restores the original binary before CarPlay (or aapd) starts: after one
-failed start for a patch not yet proven on that car, after two for a proven
-one. CarPlay comes back without the map, its Status reads `Removed — head
+stops arming CarPlay's patch in memory (and restores the original aapd)
+before CarPlay (or aapd) starts: after one failed start for a patch not yet
+proven on that car, after two for a proven one. CarPlay comes back without
+the map, its Status reads `Removed — head
 unit kept restarting`, and its Patch button applies the patch again
-(PATCH.md "Boot recovery").
+(PATCH.md "Boot recovery"). Android Auto's patch is removed at the first
+crash of the patched aapd, and aapd is started again after every end, so
+Android Auto comes back without the cluster map; the patch stays off until
+its Patch button applies it or an update brings a newer patch.
 
 To break a loop by hand: keep the phone from connecting (unplug it, or turn
 off its Wi-Fi and Bluetooth), then over SSH run
-`sh /var/opt/waze-on-cluster/current/woc-patch.sh revert` (CarPlay) or
-`... woc-patch.sh aa-revert` (Android Auto) and restart the head unit.
+`sh /var/opt/waze-on-cluster/current/woc-patch.sh off` (CarPlay: its next
+start runs stock) or `... woc-patch.sh aa-revert` (Android Auto), and restart
+the head unit.
 
 **Android Auto.** **Zoom out** and **Zoom in** change the density the phone
 is told (150-400 dpi, 180 by default; lower shows more map with smaller
@@ -110,9 +122,6 @@ unless **Keep HUD map over BMW's pop-ups** is ticked. **Own settings for
 this driver** gives the driver profile in use its own copy of these
 settings.
 
-From a shell, `waze-on-cluster -c <conf> run map|panel` sets the cluster
-target until the service restarts and prints the status.
-
 **Inside another app's scene.** An app that shows a scene file on a target
 with `layers` 1 can host the map there (cluster-render PROTOCOL.md
 "Hosting another target"): the map is then drawn only in the rect it
@@ -137,12 +146,16 @@ eroobeeroo/idrive-apps 3b7ce93 (waze-on-cluster 0.9.107).
 
 ### Settings
 
-Settings are in `waze-on-cluster.conf` (documented inline). Overrides go in
-`/var/opt/waze-on-cluster/waze-on-cluster.local.conf`, which updates keep;
-the app's map settings are in `/var/opt/waze-on-cluster/map.state.conf`, and
-the opt-in settings in `/var/opt/waze-on-cluster/features.conf`. A key the
-local conf has that this version does not know is left out with a warning
-in the log.
+Settings are in `waze-on-cluster.conf` (documented inline), which each
+install writes anew. Besides it and the command line (the Android Auto
+crop, PATCH.md), the service reads only the app's saved choices
+(`/var/opt/waze-on-cluster/map.state.conf` and the turn-box setting) and
+the opt-in settings in `/var/opt/waze-on-cluster/features.conf`. On the
+cluster the map goes on its map slot, or into a hosting app's scene.
+
+`/var/opt/waze-on-cluster/waze-on-cluster.local.conf`, which versions up to
+0.10.9 read, is not read; it stays on the unit for a downgrade, and the log
+names it at each start.
 
 ### Map size and upload
 
@@ -155,10 +168,15 @@ The map covers the cluster's central map area, 1088x480 on the 1920x720
 panel. The patch advertises exactly that, so `tex_size` must equal it.
 `src_crop` takes part of a picture of one size and scales it to `tex_size`
 (Android Auto's 1280x720 stream has its map in the top 1280x564).
-`map_rect` draws the map stretched into a rect of the current target.
+`map_rect` draws the map stretched into a rect of the map slot.
 `target_fps` (30) caps the frame rate; `picture_fps` (0: every frame) makes
 at most that many pictures a second, which saves CPU when the phone sends
-more than the cluster takes (set it to `target_fps` then).
+more than the cluster takes (set it to `target_fps` then). While another
+app's layer on the cluster asks for upload bandwidth (cluster-render's
+`others_fps`), the renderer writes the map at most at the rate it asks, 15
+a second at the least, and the pictures follow; when that app hides its
+content or exits, both go back to these settings. Nothing is written to
+disk for it.
 `always_packed = 1` sends fewer bytes for the same map ("Experimental:
 hosted_vpp_scale and always_packed" below).
 
@@ -187,8 +205,8 @@ They take effect when waze-on-cluster next starts (the next head-unit
 start). A restart of the service applies them at once, but the map stays
 blank until the phone connects again.
 
-Not in `waze-on-cluster.local.conf`: there they are left out, and patchd
-moves them to `features.conf`.
+patchd moves any it finds in `waze-on-cluster.local.conf` to
+`features.conf`, so a downgrade never meets them there.
 
 **What they need.**
 - Both: a waze-on-cluster whose `waze-on-cluster.conf` has the key. An older
@@ -251,15 +269,23 @@ sources are left out.
   (and `.log.1`), in UTC.
 - Its status, once a second: `/run/waze-on-cluster/status.json` (what the
   app shows) and `probe.txt` (the sources, the decoder, losses, timing).
-- The journal service keeps in `/var/opt/waze-on-cluster/journal/` (10
-  files of 384 KiB, across restarts) the tools' journal, the lines of
-  carplay, recmgr and the crash handler, systemd's lines about any unit
-  that starts, stops, is killed or fails, and the kernel's, without the
-  high-volume lines that explain nothing (the firewall's blocked packets,
-  Wi-Fi scans, audit records) and with a short summary of each boot's
-  kernel log. Every 30 s it adds a load line: the load averages,
-  MemAvailable, the processes in D state and the 5 processes that used the
-  most CPU.
+- The journal service keeps in RAM, in `/run/waze-on-cluster-journal/`
+  (10 files of 384 KiB), the tools' journal, the lines of carplay, aapd,
+  recmgr and the crash handler, systemd's lines about any unit that starts,
+  stops, is killed or fails, and the kernel's, without the high-volume
+  lines that explain nothing (the firewall's blocked packets, Wi-Fi scans,
+  audit records) and with a short summary of each boot's kernel log. Every
+  30 s it adds a load line: the load averages, MemAvailable, the processes
+  in D state and the 5 processes that used the most CPU.
+- It writes the newest of those lines to `/var/opt/waze-on-cluster/journal/`
+  only when they are worth keeping across a restart: shortly after a
+  failure (an `INCIDENT` line, a crash or failure of carplay, aapd or one
+  of the tools, a segfault or out-of-memory kill, a boot recovery step, a
+  patch removed) and a minute later, and at each head-unit shutdown. Each
+  write is one file `journal-<UTC>-<reason>.log` of at most 256 KiB: the
+  last 10 minutes not written yet, lines that repeat with other numbers
+  kept only 3 times. It keeps 16 files, 2 MiB at most, and removes the
+  oldest of a shutdown before the oldest of a failure.
 - **Save logs** keeps at most 5 archives in `/var/opt/waze-on-cluster/saved`.
   The Logs page serves them to a phone on the car's Wi-Fi hotspot, at the
   address it shows, while the page is open and for 15 minutes after a save.
@@ -267,23 +293,28 @@ sources are left out.
 ### The patches
 
 `patch/carplay_patch.js` and `patch/aapd_patch.js` (Node 8, no
-dependencies) find their edit sites in the build, check them, take a
-verified full backup, and write by atomic rename. The install patches only
+dependencies) find their edit sites in the build and check them.
+Their edits go into a plan that `preload/wocpatch.c` (`libwocpatch.so`,
+preloaded into carplay or aapd) applies in memory; aapd also reads a copy
+of aapd.conf with the cluster geometry, in `/run`. Neither file on `/` is
+written but to put back a patch an earlier release wrote, from verified
+backups, by atomic rename. The install patches only
 a proven build; another build whose sites are all found is patched once a
-Patch button (or `apply --unproven`) asks. Edits, sites and proven builds:
+Patch button asks. Edits, sites and proven builds:
 [patch/PATCH.md](patch/PATCH.md).
 
 `woc-patch.sh` (in `/var/opt/waze-on-cluster/current/`) is the shell path,
-for experiments and for undoing the patches without the app:
+for reading the patches' state and undoing them without the app:
 
 | Command | |
 |---|---|
 | `status`, `aa-status` | what is on disk |
 | `probe` | where the edit sites are in a carplay binary and whether it is patchable, without writing |
+| `aa-probe [<file>]` | the same for aapd (`/usr/bin/aapd` by default) |
 | `verify` | whether carplay's patch is complete |
-| `revert [--force]` | restores the original carplay; `--force` over another build (a firmware update) |
-| `aa-revert [--force]` | restores the original aapd and aapd.conf |
-| `apply high\|mid` | applies the patch: `--avb` (the app's sink), no flag (`udp://127.0.0.1:20557`), `--capture` (FIFO) or `--sink <url>`, plus `--res WxH\|stock`, `--safe WxH+X+Y\|full` and `--unproven` |
+| `off`, `aa-off` | turns carplay's or Android Auto's patch in memory off: the next start runs stock |
+| `revert [--force]` | restores the original carplay where an earlier release patched the file; `--force` over another build (a firmware update) |
+| `aa-revert [--force]` | restores the original aapd and aapd.conf where an earlier release patched them |
 
 It remounts `/` read-write only for the write.
 
@@ -291,6 +322,7 @@ It remounts `/` read-write only for the write.
 
 ```sh
 make test                         # host tests
+make test-preload                 # libwocpatch.so against a test program, with the unit's toolchain in Docker
 make test-x86                     # the C++ tests with the unit's toolchain in Docker (SSE2 paths)
 make target                       # build/target/waze-on-cluster in Docker, imports checked
 make test-firmware ROOTFS=<dir>   # DLT capture against the unit's own dlt-daemon in Docker

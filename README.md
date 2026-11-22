@@ -7,17 +7,24 @@ cluster, tried without a laptop. Three components:
 | id | kind | what |
 |---|---|---|
 | `akakingj_map_test` | app | **AK Map Test** (AK 지도 시험): one layout, KO 1 Map - KO 1's dials over the map laid under them. A copy of AK Cluster Layouts (akakingj/myapp-cluster, branch extend, where it is developed and tested: `node tools/test_map_test.js`). Built on the head unit. |
-| `waze-on-cluster` | tool | **Maps on cluster tool (extended map test)**, 0.10.901: Robert's Waze on cluster 0.10.9 with the map over or under a layout's window (`layout_window_file`, "under"), from akakingj/myapp-map branch test. Prebuilt and committed by the `build waze-on-cluster` workflow (native/waze-on-cluster.source.json). |
+| `waze-on-cluster` | tool | **Maps on cluster tool (extended map test)**, 0.13.901: Robert's Waze on cluster 0.13.0 with the map over or under a layout's window (`layout_window_file`, "under"), from akakingj/myapp-map branch test. Its built files (the binary and libwocpatch.so) from myapp-map's branch test-build, which myapp-map's map test build pushes; tools/sync_waze.py puts the rest beside them. |
 | `robertn_waze_cluster` | app | **Maps on cluster (extended map test)**, 0.6.12: Robert's Maps on cluster app as it is (robert/, a source package built on the head unit), so the tool and the app that controls it come from this one source. |
 
 The renderer (`cluster-render`) and the Store's own tools stay Robert's: every cluster app needs them.
+
+## Updating the tool
+
+akakingj/myapp-map is private, so the tool is put together from two of its branches: `test` (the source) and
+`test-build` (the built files its "map test build" pushes after the tests pass). With a checkout of `test` that has
+`test-build`'s files in `native/waze-on-cluster/build/target/`: `python3 tools/sync_waze.py <that checkout>
+native/waze-on-cluster` (the version and title from native/waze-on-cluster.source.json).
 
 ## 사용 순서 (차에서, 정차 상태)
 
 1. Store 설정 > 소스 추가 > `akakingj/extended-map-test` (브랜치 main). Robert 소스는 그대로 둡니다.
 2. Robert의 **Maps on cluster 앱**(0.6.x)을 지웁니다.
 3. Robert의 **Maps on cluster 도구**(0.10.x)를 지웁니다. (carplay·aapd 패치가 되돌려집니다.)
-4. 이 소스의 **Maps on cluster tool (extended map test)** 0.10.901을 설치합니다. (carplay 패치가 다시 걸리고 CarPlay가 재시작됩니다.)
+4. 이 소스의 **Maps on cluster tool (extended map test)** 0.13.901을 설치합니다. (carplay 패치가 다시 걸리고 CarPlay가 재시작됩니다.)
 5. 이 소스의 **Maps on cluster (extended map test)** 앱을 설치합니다.
 6. 이 소스의 **AK Map Test**(AK 지도 시험)를 설치합니다. AK Cluster Layouts의 Show를 끄고, AK Map Test의 Show를 켭니다.
 

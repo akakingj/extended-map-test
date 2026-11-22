@@ -1,10 +1,10 @@
 {
   "id": "waze-on-cluster",
   "kind": "tool",
-  "version": "0.10.901",
+  "version": "0.13.901",
   "license": "GPL-3.0-or-later",
   "title": "Maps on cluster tool (extended map test)",
-  "description": "Waze on cluster 0.10.9 (robertnisipeanu/idrive-apps) with the map over or under a layout's window (akakingj/myapp-map test), for AK Map Test. Remove Robert's Maps on cluster app and tool first.",
+  "description": "Waze on cluster 0.13.0 (robertnisipeanu/idrive-apps) with the map over or under a layout's window (akakingj/myapp-map test), for AK Map Test. Remove Robert's Maps on cluster app and tool first.",
   "requires": {
     "mgu-deploy": "0.7.17",
     "cluster-render": "0.5.3"
@@ -72,6 +72,16 @@
     {
       "path": "recovery.js",
       "from": "patch/recovery.js",
+      "mode": "0644"
+    },
+    {
+      "path": "inmem.js",
+      "from": "patch/inmem.js",
+      "mode": "0644"
+    },
+    {
+      "path": "libwocpatch.so",
+      "from": "build/target/libwocpatch.so",
       "mode": "0644"
     },
     {
@@ -261,6 +271,11 @@
       "unit": "carplay.service",
       "name": "50-waze-on-cluster.conf",
       "from": "systemd/carplay.service.d/50-waze-on-cluster.conf"
+    },
+    {
+      "unit": "aapd.service",
+      "name": "50-waze-on-cluster.conf",
+      "from": "systemd/aapd.service.d/50-waze-on-cluster.conf"
     }
   ],
   "recmgr": [
